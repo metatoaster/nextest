@@ -28,16 +28,6 @@ run-wrapper = "wrapper1-windows"
 
 [[profile.default.scripts]]
 platform = { host = "cfg(unix)" }
-filter = "test(=test_setup_script_env_vars)"
-setup = "my-script-unix-with-env"
-
-[[profile.default.scripts]]
-platform = { host = "cfg(windows)" }
-filter = "test(=test_setup_script_env_vars)"
-setup = "my-script-windows-with-env"
-
-[[profile.default.scripts]]
-platform = { host = "cfg(unix)" }
 filter = "binary(nextest-tests)"
 setup = "my-script-unix"
 list-wrapper = "wrapper1-unix"
@@ -187,32 +177,22 @@ max-threads = 1
 # Setup scripts are already relative to the workspace root. But using
 # `my-script.sh` rather than `./my-script.sh` means that we test that the path
 # is *joined* to the workspace root.
-command = { command-line = "my-script.sh", relative-to = "workspace-root" }
+command = {
+    command-line = "my-script.sh",
+    relative-to = "workspace-root",
+    env = {
+        CMD_ENV_VAR = "set-in-conf",
+    },
+}
 
 [scripts.setup.my-script-windows]
 # On Windows, we test the command not being joined to the workspace root. In
 # this case we also want to check that the cwd is the workspace root. Passing in
 # "scripts\\my-script.bat" ensures this.
-command = 'cmd /c "scripts\\my-script.bat"'
-
-[scripts.setup.my-script-unix-with-env]
-command = {
-    command-line = "my-script.sh",
-    env = {
-        NEXTEST = "0",
-        NEXTEST_PROFILE = "0",
-        MY_ENV_VAR = "my-env-var-override",
-    },
-    relative-to = "workspace-root",
-}
-
-[scripts.setup.my-script-windows-with-env]
 command = {
     command-line = 'cmd /c "scripts\\my-script.bat"',
     env = {
-        NEXTEST = "0",
-        NEXTEST_PROFILE = "0",
-        MY_ENV_VAR = "my-env-var-override",
+        CMD_ENV_VAR = "set-in-conf",
     },
 }
 

@@ -21,13 +21,10 @@ if [ -z "$NEXTEST_PROFILE" ]; then
     exit 2
 fi
 
-# If MY_ENV_VAR is set, mirror it along with NEXTEST, otherwise use default.
-if [ -n "$MY_ENV_VAR" ]; then
-    echo MY_ENV_VAR="$MY_ENV_VAR" >> "$NEXTEST_ENV"
-    echo SCRIPT_NEXTEST="$NEXTEST" >> "$NEXTEST_ENV"
-else
-    echo MY_ENV_VAR=my-env-var >> "$NEXTEST_ENV"
+if [ -n "$CMD_ENV_VAR" ]; then
+    echo CMD_ENV_VAR="$CMD_ENV_VAR" >> "$NEXTEST_ENV"
 fi
+echo MY_ENV_VAR=my-env-var >> "$NEXTEST_ENV"
 echo SCRIPT_NEXTEST_PROFILE="$NEXTEST_PROFILE" >> "$NEXTEST_ENV"
 
 # If this environment variable is set, write a NEXTEST-prefixed env var to
