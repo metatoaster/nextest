@@ -921,7 +921,7 @@ impl<'de> Deserialize<'de> for ScriptCommand {
                             if env.is_some() {
                                 return Err(A::Error::duplicate_field("env"));
                             }
-                            env = Some(map.next_value::<BTreeMap<String, String>>()?);
+                            env = Some(map.next_value_seed(EnvMapSeed)?);
                         }
                         _ => {
                             return Err(A::Error::unknown_field(
@@ -1000,6 +1000,46 @@ impl<'de> serde::de::DeserializeSeed<'de> for CommandInnerSeed {
         }
 
         deserializer.deserialize_any(CommandInnerVisitor)
+    }
+}
+
+struct EnvMapSeed;
+
+impl<'de> serde::de::DeserializeSeed<'de> for EnvMapSeed {
+    type Value = BTreeMap<String, String>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct EnvMapVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for EnvMapVisitor {
+            type Value = BTreeMap<String, String>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a map")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut env = BTreeMap::new();
+                while let Some((key, value)) = map.next_entry::<String, String>()? {
+                    if key.starts_with("NEXTEST") {
+                        return Err(A::Error::invalid_value(
+                            serde::de::Unexpected::Str(&key),
+                            &"a key that does not begin with `NEXTEST`, which is reserved for internal use",
+                        ));
+                    }
+                    env.insert(key, value);
+                }
+                Ok(env)
+            }
+        }
+
+        deserializer.deserialize_any(EnvMapVisitor)
     }
 }
 
@@ -1376,6 +1416,20 @@ mod tests {
         r#"invalid type: sequence, expected a string"#
 
         ; "target-runner is not a string"
+    )]
+    #[test_case(
+        indoc! {r#"
+            [scripts.setup.foo]
+            command = {
+                command-line = "my-command",
+                env = {
+                    NEXTEST_RESERVED = "reserved",
+                },
+            }
+        "#},
+        r#"scripts.setup.foo.command.env: invalid value: string "NEXTEST_RESERVED", expected a key that does not begin with `NEXTEST`, which is reserved for internal use"#
+
+        ; "env containing key reserved for internal use"
     )]
     fn parse_scripts_invalid_deserialize(config_contents: &str, message: &str) {
         let workspace_dir = tempdir().unwrap();
