@@ -22,7 +22,7 @@ if [ -z "$NEXTEST_PROFILE" ]; then
 fi
 
 if [ -n "$CMD_ENV_VAR" ]; then
-    echo CMD_ENV_VAR="$CMD_ENV_VAR" >> "$NEXTEST_ENV"
+    echo SCRIPT_CMD_ENV_VAR="$CMD_ENV_VAR" >> "$NEXTEST_ENV"
 fi
 echo MY_ENV_VAR=my-env-var >> "$NEXTEST_ENV"
 echo SCRIPT_NEXTEST_PROFILE="$NEXTEST_PROFILE" >> "$NEXTEST_ENV"
